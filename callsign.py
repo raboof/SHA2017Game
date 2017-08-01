@@ -3,7 +3,6 @@ import time
 import binascii
 import urandom
 
-leaguename = [ "red", "fuchsia", "blue", "green", "yellow", "orange" ]
 leaguecolor = [
     "000a0000",
     "000e0000",

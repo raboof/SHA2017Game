@@ -60,11 +60,13 @@ def listenForOracle(leaguename):
     w.active(False)
     main()
 
+leaguenames = [ "red", "fuchsia", "blue", "green", "yellow", "orange" ]
+
 def main():
     gc.collect()
     league = game_common.determineLeague()
     callsign.callsign(league)
-    leaguename = callsign.leaguename[league]
+    leaguename = leaguenames[league]
 
     myfragment = badge.nvs_get_str("game", "myfragment")
     if myfragment:
