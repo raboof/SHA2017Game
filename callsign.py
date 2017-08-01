@@ -14,7 +14,7 @@ leaguecolor = [
 ]
 off = "00000000"
 
-def blink3(color, delay = 50):
+def blink3(color, delay = 75):
     for i in range(3):
         badge.leds_send_data(binascii.unhexlify(color * 6), 24)
         time.sleep_ms(delay)
@@ -24,7 +24,7 @@ def blink3(color, delay = 50):
 def blinksos(color):
     blink3(color)
     time.sleep_ms(100)
-    blink3(color, 150)
+    blink3(color, 175)
     blink3(color)
 
 def callsign(league):
