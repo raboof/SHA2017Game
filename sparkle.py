@@ -4,7 +4,7 @@ import binascii
 import urandom
 
 import sys
-sys.path.append('/lib/game')
+sys.path.append('/lib/SHA2017Game')
 import callsign
 
 off = "00000000"

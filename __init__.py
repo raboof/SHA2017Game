@@ -10,7 +10,7 @@ import time
 import dialogs
 import machine
 
-sys.path.append('/lib/game')
+sys.path.append('/lib/SHA2017Game')
 import game_common
 import callsign
 
@@ -64,7 +64,7 @@ def receiveData(essid, cb, errcb):
         main()
 
 def gotOracleData(data):
-    badge.nvs_set_str("game", "myfragment", data)
+    badge.nvs_set_str('SHA2017Game', 'fragment_0', data)
     return True
 
 def listenForOracle(leaguename):
@@ -104,7 +104,7 @@ def send_to(recv):
     ai = socket.getaddrinfo("192.168.4.1", 2017)
     addr = ai[0][-1]
     s.connect(addr)
-    myfragment = badge.nvs_get_str("game", "myfragment")
+    myfragment = badge.nvs_get_str('SHA2017Game', 'fragment_0')
     s.send(myfragment)
     s.send('\r\n')
     s.close()
@@ -161,7 +161,7 @@ def main():
     league = game_common.determineLeague()
     callsign.callsign(league)
 
-    myfragment = badge.nvs_get_str("game", "myfragment")
+    myfragment = badge.nvs_get_str('SHA2017Game', 'fragment_0')
     if myfragment:
         ugfx.clear(ugfx.WHITE)
         ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
