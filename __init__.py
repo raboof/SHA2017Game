@@ -53,7 +53,7 @@ def receiveData(essid, cb, errcb):
     # s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(addr)
     s.listen(5)
-    print("Listening")
+    print('Listening at', essid)
     s.settimeout(30)
     try:
         res = s.accept()
@@ -79,7 +79,7 @@ def receiveData(essid, cb, errcb):
     s.close()
     w.active(False)
     if done:
-        main()
+        appglue.start_app('SHA2017Game')
 
 def gotOracleData(data):
     badge.nvs_set_str('SHA2017Game', 'fragment_0', data)
@@ -102,18 +102,29 @@ def send_to(recv):
     ugfx.string(0, 30, "Connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
 
+    n = 0
+
     try:
         w = network.WLAN(network.STA_IF)
         w.active(True)
         ap ="Gamer %s %s" % (leaguename(), recv)
         print('Connecting to', ap)
         w.connect(ap)
-        while not w.isconnected():
+        while not w.isconnected() and n < 30:
             time.sleep(1)
+            n = n + 1
     except msg:
         print("error!", msg)
         ugfx.string(0, 50, "Error connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
         ugfx.flush()
+        ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
+        return
+
+    if n == 30:
+        print('No connection after sleeping 30 seconds')
+        ugfx.string(0, 50, "Error connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
         return
 
     ugfx.string(0, 50, "Sending fragments...", "Roboto_Regular12", ugfx.BLACK)
@@ -122,25 +133,34 @@ def send_to(recv):
     ai = socket.getaddrinfo("192.168.4.1", 2017)
     addr = ai[0][-1]
     s.connect(addr)
-    myfragment = badge.nvs_get_str('SHA2017Game', 'fragment_0')
-    s.send(myfragment)
-    s.send('\r\n')
+    s.send('#'.join(get_fragments()))
+    s.send("\r\n")
     s.close()
     w.active(False)
     print('Done sending')
     ugfx.string(0, 70, "Sent fragments. Press A.", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
-    ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
+    ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
 
 def gotFragmentData(data):
-    # TODO show how many fragment you have and need, check key if done.
     print('Got fragment data: ', data)
+    for fragment in data.decode().replace('\n', '').replace('\r', '').split('#'):
+        add_fragment(fragment)
+
+    fragments = get_fragments()
+    # TODO when len(fragments)>=25 then continue!
+
+    ugfx.string(0, 70, "You now own %d unique fragments, %d to go!" % (len(fragments), 25 - len(fragments)), "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+    ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
+    ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
     return False;
 
 def receive_fragments_failed():
     ugfx.string(0, 70, "Failed to receive fragments. Press A.", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
-    ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
+    ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
     
 def receive_fragments():
     receiveData("Gamer %s %03d%03d" % (leaguename(), machine.unique_id()[4], machine.unique_id()[5]), gotFragmentData, receive_fragments_failed)
