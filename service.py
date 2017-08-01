@@ -3,7 +3,14 @@ import time
 import badge
 sys.path.append('/lib/game')
 import game_common
-import callsign
+
+try:
+    print('importing sparkle')
+    import sparkle as callsign
+    print('imported sparkle')
+except:
+    import callsign
+    print('imported callsign instead')
 
 def setup():
     return False
@@ -15,8 +22,8 @@ def draw(x,y):
 def loop(sleepCnt):
     # TODO put speed in nvs
     if time.ticks_cpu() % 260 == 0:
-    	print("game service called")
+    # if time.ticks_cpu() % 20 == 0:
         league = game_common.determineLeague()
-        callsign.callsign(league)
+        callsign.blink(league)
 
     return False

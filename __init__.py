@@ -8,10 +8,18 @@ import ugfx
 import appglue
 import time
 import dialogs
+import machine
 
 sys.path.append('/lib/game')
 import game_common
 import callsign
+
+leaguenames = [ "red", "fuchsia", "blue", "green", "yellow", "orange" ]
+
+def leaguename():
+    league = game_common.determineLeague()
+    return leaguenames[league]
+
 
 def listenForOracle(leaguename):
     ugfx.clear(ugfx.WHITE)
@@ -60,27 +68,94 @@ def listenForOracle(leaguename):
     w.active(False)
     main()
 
-leaguenames = [ "red", "fuchsia", "blue", "green", "yellow", "orange" ]
+def send_to(recv):
+    ugfx.clear(ugfx.WHITE)
+    ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
+    ugfx.string(0, 30, "Connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+
+    try:
+        w = network.WLAN(network.STA_IF)
+        w.active(True)
+        w.connect("Gamer %s %s" % (leaguename(), recv))
+    except msg:
+        print("error!", msg)
+        ugfx.string(0, 50, "Error connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        return
+
+    ugfx.string(0, 50, "Sending fragments...", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+    s = socket.socket()
+    ai = socket.getaddrinfo("192.168.4.1", 2017)
+    addr = ai[0][-1]
+    s.connect(addr)
+    myfragment = badge.nvs_get_str("game", "myfragment")
+    s.send(myfragment)
+    s.close()
+    w.active(False)
+
+def receive_fragments():
+
+def send_or_recv(send):
+    if send:
+        ugfx.clear(ugfx.WHITE)
+        dialogs.prompt_text("Receiver address:", cb=send_to)
+    else:
+        ugfx.clear(ugfx.WHITE)
+        ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
+        ugfx.string(0, 30, "Tell the other player of your league your address,", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 50, "which is %03d%03d. Waiting..." % (machine.unique_id()[4], machine.unique_id()[5]), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        receive_fragments()
+
+def initiate_sharing():
+    ugfx.clear(ugfx.WHITE)
+    ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
+    dialogs.prompt_boolean("Do you want to send or receive?", true_text="Send", false_text="Receive", height=100, cb=send_or_recv)
+
+def won():
+    ugfx.clear(ugfx.WHITE)
+    ugfx.string(0, 0, "Congratulations!", "PermanentMarker22", ugfx.BLACK)
+    ugfx.string(0, 30, "Cool! You've unlocked your league's secret. As a reward", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 50, "the signal shown by your badge LEDs will now sparkle.", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 70, "Is this the end? That is up to you! Contact raboof for", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 90, "the game code and design new challenges!", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+    ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
+    ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
 
 def main():
     gc.collect()
     league = game_common.determineLeague()
     callsign.callsign(league)
-    leaguename = leaguenames[league]
 
     myfragment = badge.nvs_get_str("game", "myfragment")
     if myfragment:
-        print("Have a fragment, no need to fetch")
+        ugfx.clear(ugfx.WHITE)
+        ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
+        ugfx.string(0, 30, "The oracle gave you a fragment of a relic of the " + leaguename(), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 50, "league. 25 such fragments must be brought together", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 70, "to unlock its potential. Find other league members to", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 90, "share fragments along with a story or Mate.", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        ugfx.input_init()
+        ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
+        ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
     else:
         def oracle_selection_made(value):
             callsign.callsign(league)
             if value:
-                listenForOracle(leaguename)
+                listenForOracle(leaguename())
             else:
-                appglue.start_app("")
+                appglue.home()
 
+        def dialog_title():
+            return "SHA2017Game - you are in league " + leaguename()
         dialogs.prompt_boolean('Are you ready to start your quest?',
-            title = "SHA2017Game - you are in league %s" % leaguename,
+            title = dialog_title(),
             true_text = 'Search for the oracle',
             false_text = 'Back to home screen',
             height = 100,

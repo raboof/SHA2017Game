@@ -28,3 +28,9 @@ def blinksos(color):
 
 def callsign(league):
     blinksos(leaguecolor[league])
+
+def league_color(league):
+    return leaguecolor[league]
+
+def blink(league):
+    callsign(league)
