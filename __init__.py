@@ -16,6 +16,24 @@ import callsign
 
 leaguenames = [ "red", "fuchsia", "blue", "green", "yellow", "orange" ]
 
+def get_fragments():
+    result = []
+    for i in range(0, 25):
+        fragment = badge.nvs_get_str('SHA2017Game', "fragment_%d" % i)
+        if fragment:
+            result.append(fragment)
+    return result
+
+def add_fragment(newfragment):
+    for i in range(0, 25):
+        fragment = badge.nvs_get_str('SHA2017Game', "fragment_%d" % i)
+        if fragment:
+            if fragment == newfragment:
+                return
+        else:
+            badge.nvs_set_str('SHA2017Game', "fragment_%d" % i, newfragment)
+            return
+
 def leaguename():
     league = game_common.determineLeague()
     return leaguenames[league]
