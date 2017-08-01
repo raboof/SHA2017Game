@@ -23,7 +23,9 @@ def loop(sleepCnt):
     # TODO put speed in nvs
     if time.ticks_cpu() % 260 == 0:
     # if time.ticks_cpu() % 20 == 0:
+        print('game service')
         league = game_common.determineLeague()
         callsign.blink(league)
+        print('done')
 
-    return False
+    return True

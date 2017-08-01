@@ -20,19 +20,10 @@ def leaguename():
     league = game_common.determineLeague()
     return leaguenames[league]
 
-
-def listenForOracle(leaguename):
-    ugfx.clear(ugfx.WHITE)
-    ugfx.string(0, 0, "Find the oracle!", "PermanentMarker22", ugfx.BLACK)
-    ugfx.string(0, 30, "Welcome, brave traveller of league %s. Your quest" % leaguename, "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(0, 50, "starts once you have found the oracle. When you are", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(0, 70, "near she will call out for you and provide further", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(0, 90, "instructions. You have 30 seconds per attempt.", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.flush()
-
+def receiveData(essid, cb, errcb):
     w = network.WLAN(network.AP_IF)
     w.active(True)
-    w.config(essid='OracleSeeker', channel=11)
+    w.config(essid=essid, channel=11)
 
     s = socket.socket()
 
@@ -58,15 +49,34 @@ def listenForOracle(leaguename):
         print("Request:")
         req = client_stream.readline()
         print(req)
-        badge.nvs_set_str("game", "myfragment", req)
+
+        done = cb(req)
 
         client_stream.close()
         print("Done.")
     except OSError:
         print("Error")
+        done = errcb()
+
     s.close()
     w.active(False)
-    main()
+    if done:
+        main()
+
+def gotOracleData(data):
+    badge.nvs_set_str("game", "myfragment", data)
+    return True
+
+def listenForOracle(leaguename):
+    ugfx.clear(ugfx.WHITE)
+    ugfx.string(0, 0, "Find the oracle!", "PermanentMarker22", ugfx.BLACK)
+    ugfx.string(0, 30, "Welcome, brave traveller of league %s. Your quest" % leaguename, "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 50, "starts once you have found the oracle. When you are", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 70, "near she will call out for you and provide further", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 90, "instructions. You have 30 seconds per attempt.", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+
+    receiveData('OracleSeeker', gotOracleData, appglue.home)
 
 def send_to(recv):
     ugfx.clear(ugfx.WHITE)
@@ -77,7 +87,11 @@ def send_to(recv):
     try:
         w = network.WLAN(network.STA_IF)
         w.active(True)
-        w.connect("Gamer %s %s" % (leaguename(), recv))
+        ap ="Gamer %s %s" % (leaguename(), recv)
+        print('Connecting to', ap)
+        w.connect(ap)
+        while not w.isconnected():
+            time.sleep(1)
     except msg:
         print("error!", msg)
         ugfx.string(0, 50, "Error connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
@@ -92,10 +106,26 @@ def send_to(recv):
     s.connect(addr)
     myfragment = badge.nvs_get_str("game", "myfragment")
     s.send(myfragment)
+    s.send('\r\n')
     s.close()
     w.active(False)
+    print('Done sending')
+    ugfx.string(0, 70, "Sent fragments. Press A.", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+    ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
 
+def gotFragmentData(data):
+    # TODO show how many fragment you have and need, check key if done.
+    print('Got fragment data: ', data)
+    return False;
+
+def receive_fragments_failed():
+    ugfx.string(0, 70, "Failed to receive fragments. Press A.", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+    ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
+    
 def receive_fragments():
+    receiveData("Gamer %s %03d%03d" % (leaguename(), machine.unique_id()[4], machine.unique_id()[5]), gotFragmentData, receive_fragments_failed)
 
 def send_or_recv(send):
     if send:
