@@ -208,6 +208,18 @@ def main():
     league = game_common.determineLeague()
     callsign.callsign(league)
 
+    ugfx.clear(ugfx.WHITE)
+    ugfx.string(0, 0, "Welcome, early bird!", "PermanentMarker22", ugfx.BLACK)
+    ugfx.string(0, 30, "Welcome to the SHA2017Game! You are in league", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 50, "%s, as your 'callsign' shows if you soldered on your" % leaguename(), "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 70, "LEDs. The game starts when the oracle is on the field,", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(0, 90, "keep an eye on https://twitter.com/SHA2017Game.", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.string(5, 113, "B: Back to home", "Roboto_Regular12", ugfx.BLACK)
+    ugfx.flush()
+    ugfx.input_init()
+    ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
+    return
+
     fragments = get_fragments()
     print('number of fragments so far', len(fragments))
 
