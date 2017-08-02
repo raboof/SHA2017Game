@@ -1,0 +1,10 @@
+{
+  "apiVersion":2,
+  "wifi": {
+    "setup": false,
+    "loop": false
+  },
+  "rtc": false,
+  "loop": true,
+  "draw": false
+}

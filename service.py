@@ -16,4 +16,4 @@ def loop():
     league = game_common.determineLeague()
     callsign.blink(league)
 
-    return 25 * 60
+    return 25 * 60 * 1000
