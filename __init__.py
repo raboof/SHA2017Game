@@ -153,7 +153,8 @@ def gotFragmentData(data):
         add_fragment(fragment)
 
     fragments = get_fragments()
-    # TODO when len(fragments)>=25 then continue!
+    if len(fragments)>=25:
+        appglue.start_app('SHA2017Game')
 
     ugfx.string(0, 70, "You now own %d unique fragments, %d to go!" % (len(fragments), 25 - len(fragments)), "Roboto_Regular12", ugfx.BLACK)
     ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
@@ -207,8 +208,30 @@ def main():
     league = game_common.determineLeague()
     callsign.callsign(league)
 
-    myfragment = badge.nvs_get_str('SHA2017Game', 'fragment_0')
-    if myfragment:
+    fragments = get_fragments()
+    print('number of fragments so far', len(fragments))
+
+    if len(fragments) >= 25:
+        ugfx.clear(ugfx.WHITE)
+        try:
+            import os
+            os.stat('/lib/SHA2017game/sparkle.py')
+            won()
+        except:
+            import wifi
+            import urequests
+            import shards
+            wifi.init()
+            while not wifi.sta_if.isconnected():
+                time.sleep(1)
+            key = shards.key_from_shards(fragments)
+            print('Collecting shards.py with key', key)
+            r = urequests.get("http://pi.bzzt.net/%s/sparkle.py" % key)
+            f = open('/lib/SHA2017game/sparkle.py', 'w')
+            f.write(r.content)
+            f.close()
+            won()
+    elif len(fragments) > 0:
         ugfx.clear(ugfx.WHITE)
         ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
         ugfx.string(0, 30, "The oracle gave you a fragment of a relic of the " + leaguename(), "Roboto_Regular12", ugfx.BLACK)
