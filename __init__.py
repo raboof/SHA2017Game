@@ -67,6 +67,7 @@ def receiveData(essid, cb, errcb):
         print("Request:")
         req = client_stream.readline()
         print(req)
+        client_stream.send('OK\r\n')
 
         done = cb(req)
 
@@ -135,6 +136,7 @@ def send_to(recv):
     s.connect(addr)
     s.send('#'.join(get_fragments()))
     s.send("\r\n")
+    s.readline()
     s.close()
     w.active(False)
     print('Done sending')
