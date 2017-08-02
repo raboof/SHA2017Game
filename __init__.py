@@ -118,6 +118,7 @@ def send_to(recv):
         print("error!", msg)
         ugfx.string(0, 50, "Error connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
         ugfx.flush()
+        ugfx.input_init()
         ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
         return
 
@@ -125,6 +126,7 @@ def send_to(recv):
         print('No connection after sleeping 30 seconds')
         ugfx.string(0, 50, "Error connecting to other player...", "Roboto_Regular12", ugfx.BLACK)
         ugfx.flush()
+        ugfx.input_init()
         ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
         return
 
@@ -142,6 +144,7 @@ def send_to(recv):
     print('Done sending')
     ugfx.string(0, 70, "Sent fragments. Press A.", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
+    ugfx.input_init()
     ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
 
 def gotFragmentData(data):
@@ -155,6 +158,7 @@ def gotFragmentData(data):
     ugfx.string(0, 70, "You now own %d unique fragments, %d to go!" % (len(fragments), 25 - len(fragments)), "Roboto_Regular12", ugfx.BLACK)
     ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
+    ugfx.input_init()
     ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
     ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
     return False;
@@ -162,6 +166,7 @@ def gotFragmentData(data):
 def receive_fragments_failed():
     ugfx.string(0, 70, "Failed to receive fragments. Press A.", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
+    ugfx.input_init()
     ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
     
 def receive_fragments():
@@ -193,6 +198,7 @@ def won():
     ugfx.string(0, 90, "the game code and design new challenges!", "Roboto_Regular12", ugfx.BLACK)
     ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
     ugfx.flush()
+    ugfx.input_init()
     ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
     ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
 
