@@ -169,7 +169,7 @@ def receive_fragments_failed():
     ugfx.flush()
     ugfx.input_init()
     ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
-    
+
 def receive_fragments():
     receiveData("Gamer %s %03d%03d" % (leaguename(), machine.unique_id()[4], machine.unique_id()[5]), gotFragmentData, receive_fragments_failed)
 
@@ -208,20 +208,23 @@ def main():
     league = game_common.determineLeague()
     callsign.callsign(league)
 
-    ugfx.clear(ugfx.WHITE)
-    ugfx.string(0, 0, "Welcome, early bird!", "PermanentMarker22", ugfx.BLACK)
-    ugfx.string(0, 30, "Welcome to the SHA2017Game! You are in league", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(0, 50, "%s, as your 'callsign' shows if you soldered on your" % leaguename(), "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(0, 70, "LEDs. The game starts when the oracle is on the field,", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(0, 90, "keep an eye on https://twitter.com/SHA2017Game.", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.string(5, 113, "B: Back to home", "Roboto_Regular12", ugfx.BLACK)
-    ugfx.flush()
-    ugfx.input_init()
-    ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
-    return
+    if False:
+        ugfx.clear(ugfx.WHITE)
+        ugfx.string(0, 0, "Welcome, early bird!", "PermanentMarker22", ugfx.BLACK)
+        ugfx.string(0, 30, "Welcome to the SHA2017Game! You are in league", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 50, "%s, as your 'callsign' shows if you soldered on your" % leaguename(), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 70, "LEDs. The game starts when the oracle is on the field,", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 90, "keep an eye on https://twitter.com/SHA2017Game.", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(5, 113, "B: Back to home", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        ugfx.input_init()
+        ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
+        return
 
     fragments = get_fragments()
     print('number of fragments so far', len(fragments))
+
+    oracle_exists = False
 
     if len(fragments) >= 25:
         ugfx.clear(ugfx.WHITE)
@@ -255,7 +258,7 @@ def main():
         ugfx.input_init()
         ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
         ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
-    else:
+    elif oracle_exists:
         def oracle_selection_made(value):
             callsign.callsign(league)
             if value:
@@ -271,5 +274,28 @@ def main():
             false_text = 'Back to home screen',
             height = 100,
             cb=oracle_selection_made)
+    else:
+        ugfx.clear(ugfx.WHITE)
+        ugfx.string(0, 0, "Retrieving fragment!", "PermanentMarker22", ugfx.BLACK)
+        ugfx.string(0, 30, "Welcome player of league " + leaguename(), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 50, "Fetching your initial fragment!", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        import wifi
+        import urequests
+        wifi.init()
+        n = 0
+        while not wifi.sta_if.isconnected() and n < 30:
+            time.sleep(1)
+            n = n + 1
+        if n == 30:
+            ugfx.string(0, 70, "Failed! Press A.", "Roboto_Regular12", ugfx.BLACK)
+            ugfx.input_init()
+            ugfx.input_attach(ugfx.BTN_A, lambda pressed: appglue.start_app('SHA2017Game') if pressed else 0)
+            return
+            
+        fragmentid = (machine.unique_id()[3] + machine.unique_id()[4] + machine.unique_id()[5]) % 700
+        r = urequests.get("http://pi.bzzt.net/oracle/%d/%d" % (league, fragmentid))
+        gotOracleData(r.content)
+        appglue.start_app('SHA2017Game')
 
 main()
