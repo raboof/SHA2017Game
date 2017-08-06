@@ -16,19 +16,37 @@ import callsign
 
 leaguenames = [ "red", "fuchsia", "blue", "green", "yellow", "orange" ]
 
+def shift_fragments(i):
+    for n in range(i, 26):
+        next_fragment = badge.nvs_get_str('SHA2017Game', "fragment_%d" % (n+1))
+        if next_fragment:
+            badge.nvs_set_str('SHA2017Game', "fragment_%d" % n, next_fragment)
+        else:
+            badge.nvs_erase_key('SHA2017Game', "fragment_%d" % n)
+            return
+
+def remove_duplicate_initial_fragment():
+    initial_fragment = badge.nvs_get_str('SHA2017Game', "fragment_0")
+    if initial_fragment:
+        for i in range(1, 25):
+            fragment = badge.nvs_get_str('SHA2017Game', "fragment_%d" % i)
+            if fragment and fragment.strip() == initial_fragment.strip():
+                shift_fragments(i)
+                return
+
 def get_fragments():
     result = []
     for i in range(0, 25):
         fragment = badge.nvs_get_str('SHA2017Game', "fragment_%d" % i)
         if fragment:
-            result.append(fragment)
+            result.append(fragment.replace('\n', '').replace('\r', ''))
     return result
 
 def add_fragment(newfragment):
     for i in range(0, 25):
         fragment = badge.nvs_get_str('SHA2017Game', "fragment_%d" % i)
         if fragment:
-            if fragment == newfragment:
+            if fragment.strip() == newfragment.strip():
                 return
         else:
             badge.nvs_set_str('SHA2017Game', "fragment_%d" % i, newfragment)
@@ -54,7 +72,7 @@ def receiveData(essid, cb, errcb):
     s.bind(addr)
     s.listen(5)
     print('Listening at', essid)
-    s.settimeout(30)
+    s.settimeout(120)
     try:
         res = s.accept()
         client_sock = res[0]
@@ -149,8 +167,8 @@ def send_to(recv):
 
 def gotFragmentData(data):
     print('Got fragment data: ', data)
-    for fragment in data.decode().replace('\n', '').replace('\r', '').split('#'):
-        add_fragment(fragment)
+    for fragment in data.decode().split('#'):
+        add_fragment(fragment.replace('\n', '').replace('\r', ''))
 
     fragments = get_fragments()
     if len(fragments)>=25:
@@ -208,6 +226,8 @@ def main():
     league = game_common.determineLeague()
     callsign.callsign(league)
 
+    remove_duplicate_initial_fragment()
+
     if False:
         ugfx.clear(ugfx.WHITE)
         ugfx.string(0, 0, "Welcome, early bird!", "PermanentMarker22", ugfx.BLACK)
@@ -227,6 +247,7 @@ def main():
     oracle_exists = False
 
     if len(fragments) >= 25:
+        badge.nvs_set_str('SHA2017Game', 'fragment_0', fragments[0].strip())
         ugfx.clear(ugfx.WHITE)
         try:
             import os
@@ -239,14 +260,29 @@ def main():
             wifi.init()
             while not wifi.sta_if.isconnected():
                 time.sleep(1)
-            key = shards.key_from_shards(fragments)
+            cleaned_fragments = []
+            for fragment in fragments:
+                cleaned_fragments.append(fragment.replace('\n', '').replace('\r', ''))
+            key = shards.key_from_shards(cleaned_fragments)
             print('Collecting shards.py with key', key)
             r = urequests.get("http://pi.bzzt.net/%s/sparkle.py" % key)
             f = open('/lib/SHA2017game/sparkle.py', 'w')
             f.write(r.content)
             f.close()
             won()
-    elif len(fragments) > 0:
+    elif len(fragments) > 1:
+        badge.nvs_set_str('SHA2017Game', 'fragment_0', fragments[0].strip())
+        ugfx.clear(ugfx.WHITE)
+        ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
+        ugfx.string(0, 30, "By sharing you have now brought together %d" % len(fragments), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 50, "fragments of league %s. Sharing will send them all." % leaguename(), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(0, 70, "Unlock your league %s key with 25 fragments!" % leaguename(), "Roboto_Regular12", ugfx.BLACK)
+        ugfx.string(5, 113, "B: Back to home                                A: Share fragments", "Roboto_Regular12", ugfx.BLACK)
+        ugfx.flush()
+        ugfx.input_init()
+        ugfx.input_attach(ugfx.BTN_B, lambda pressed: appglue.home() if pressed else 0)
+        ugfx.input_attach(ugfx.BTN_A, lambda pressed: initiate_sharing() if pressed else 0)
+    elif len(fragments) == 1:
         ugfx.clear(ugfx.WHITE)
         ugfx.string(0, 0, "Share your fragments!", "PermanentMarker22", ugfx.BLACK)
         ugfx.string(0, 30, "The oracle gave you a fragment of a relic of the " + leaguename(), "Roboto_Regular12", ugfx.BLACK)
