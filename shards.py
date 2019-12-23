@@ -1,5 +1,8 @@
 import shards
 
+# The shamir secret sharing code in this file was based on
+# https://github.com/blockstack/secret-sharing
+
 # micropython 'int' is actually arbitrary-precision it seems?
 integer_types = (int)
 
